@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SPYDL1D策略监控仪表板</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css">
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-bg: #f8f9fa;
+            --dark-bg: #2c3e50;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            color: #333;
+            padding-top: 20px;
+        }
+        
+        .dashboard-header {
+            background: linear-gradient(135deg, var(--primary-color), #1a2530);
+            color: white;
+            padding: 25px 0;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .dashboard-header h1 {
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .last-update {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+            margin-bottom: 25px;
+            overflow: hidden;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: 600;
+            padding: 15px 20px;
+            border-bottom: none;
+        }
+        
+        .card-body {
+            padding: 25px;
+        }
+        
+        .strategy-indicator {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .strategy-1 {
+            background-color: rgba(52, 152, 219, 0.2);
+            color: var(--secondary-color);
+            border-left: 4px solid var(--secondary-color);
+        }
+        
+        .strategy-2 {
+            background-color: rgba(46, 204, 113, 0.2);
+            color: #2ecc71;
+            border-left: 4px solid #2ecc71;
+        }
+        
+        .strategy-3 {
+            background-color: rgba(155, 89, 182, 0.2);
+            color: #9b59b6;
+            border-left: 4px solid #9b59b6;
+        }
+        
+        .strategy-4 {
+            background-color: rgba(241, 196, 15, 0.2);
+            color: #f1c40f;
+            border-left: 4px solid #f1c40f;
+        }
+        
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
+        
+        .data-table thead th {
+            background-color: #f1f5f9;
+            border-bottom: 2px solid #dee2e6;
+            padding: 12px 15px;
+            font-weight: 600;
+            color: var(--primary-color);
+        }
+        
+        .data-table tbody td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .data-table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .indicator-value {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            line-height: 30px;
+            text-align: center;
+            border-radius: 50%;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .indicator-1 {
+            background-color: #27ae60;
+            color: white;
+        }
+        
+        .indicator-0 {
+            background-color: #e74c3c;
+            color: white;
+        }
+        
+        .metrics-table td {
+            font-weight: 500;
+        }
+        
+        .metrics-table tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .monitor-image-container {
+            text-align: center;
+            padding: 15px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.05);
+        }
+        
+        .monitor-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 5px;
+        }
+        
+        .refresh-btn {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        .last-refresh {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .info-panel {
+            background-color: #e8f4fc;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--secondary-color);
+        }
+        
+        .info-title {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+        }
+        
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+        
+        .legend-color {
+            width: 15px;
+            height: 15px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background-color: rgba(39, 174, 96, 0.2);
+            color: #27ae60;
+        }
+        
+        .status-inactive {
+            background-color: rgba(231, 76, 60, 0.2);
+            color: #e74c3c;
+        }
+        
+        .footer {
+            text-align: center;
+            padding: 20px;
+            margin-top: 40px;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            border-top: 1px solid #eee;
+        }
+        
+        .error-message {
+            background-color: #ffeaea;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #d63031;
+        }
+        
+        .error-message i {
+            margin-right: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 15px;
+            }
+            
+            .dashboard-header {
+                padding: 15px 0;
+            }
+            
+            .strategy-indicator {
+                display: block;
+                margin-right: 0;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <!-- 仪表板标题区域 -->
+        <div class="dashboard-header">
+            <div class="container">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h1><i class="fas fa-chart-line me-2"></i>SPYDL1D策略监控仪表板</h1>
+                        <p class="last-update mb-0">最后更新: <span id="last-update-time">加载中...</span></p>
+                    </div>
+                    <div>
+                        <button class="refresh-btn" id="refresh-data">
+                            <i class="fas fa-sync-alt me-2"></i>刷新数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container">
+            <!-- 介绍和简评区域 -->
+            <div id="info-section">
+                <!-- 动态加载info.json内容 -->
+            </div>
+            
+            <div class="row">
+                <!-- 左侧: 监控图片和指标表格 -->
+                <div class="col-lg-8">
+                    <!-- 组合监控图片 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-bar me-2"></i>组合监控与回测表现
+                        </div>
+                        <div class="card-body">
+                            <div class="monitor-image-container">
+                                <img id="monitor-image" src="monitor.png" alt="组合监控图" class="monitor-image">
+                                <div class="last-refresh mt-2">图片最后更新: <span id="image-update-time">-</span></div>
+                            </div>
+                            
+                            <!-- 策略说明 -->
+                            <div class="mt-4">
+                                <h5 class="info-title">策略说明</h5>
+                                <div class="d-flex flex-wrap">
+                                    <div class="strategy-indicator strategy-1">Strategy 1: pred1 > 0</div>
+                                    <div class="strategy-indicator strategy-2">Strategy 2: pred2 > 0</div>
+                                    <div class="strategy-indicator strategy-3">Strategy 3: pred3 > 0</div>
+                                </div>
+                                <p class="mt-3 mb-0">
+                                    <small><strong>指标说明:</strong> 指标大于0（即值为1）为多头偏好，指标不大于0（即值为0）为非多头偏好（不代表空头）</small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 指标表格 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-table me-2"></i>动态日度指标数据
+                        </div>
+                        <div class="card-body">
+                            <div id="factors-error" class="error-message" style="display: none;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span id="factors-error-msg"></span>
+                            </div>
+                            <div class="table-responsive">
+                                <table id="factors-table" class="table table-hover data-table">
+                                    <thead>
+                                        <tr id="factors-header">
+                                            <!-- 动态生成表头 -->
+                                        </tr>
+                                    </thead>
+                                    <tbody id="factors-data">
+                                        <!-- 动态加载CSV数据 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div class="legend mt-3">
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background-color: #27ae60;"></div>
+                                    <span>指标值 = 1 (多头偏好)</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color" style="background-color: #e74c3c;"></div>
+                                    <span>指标值 = 0 (非多头偏好)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右侧: 指标表格和其他信息 -->
+                <div class="col-lg-4">
+                    <!-- Metrics表格 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-chart-pie me-2"></i>组合绩效指标
+                        </div>
+                        <div class="card-body">
+                            <div id="metrics-error" class="error-message" style="display: none;">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span id="metrics-error-msg"></span>
+                            </div>
+                            <div class="table-responsive">
+                                <table id="metrics-table" class="table metrics-table">
+                                    <thead>
+                                        <tr id="metrics-header">
+                                            <!-- 动态生成表头 -->
+                                        </tr>
+                                    </thead>
+                                    <tbody id="metrics-data">
+                                        <!-- 动态加载CSV数据 -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- 状态指示器 -->
+                            <div class="mt-4">
+                                <h5 class="info-title">当前策略状态</h5>
+                                <div id="strategy-status">
+                                    <!-- 动态加载状态 -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 数据源信息 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="fas fa-database me-2"></i>数据源信息
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-file-csv me-2"></i>factors.csv</span>
+                                    <span class="status-badge status-inactive" id="factors-status">未加载</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-chart-bar me-2"></i>monitor.png</span>
+                                    <span class="status-badge status-inactive" id="image-status">未加载</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-file-csv me-2"></i>metrics.csv</span>
+                                    <span class="status-badge status-inactive" id="metrics-status">未加载</span>
+                                </li>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <span><i class="fas fa-file-code me-2"></i>info.json</span>
+                                    <span class="status-badge status-inactive" id="info-status">未加载</span>
+                                </li>
+                            </ul>
+                            <div class="mt-3">
+                                <p class="mb-1"><small><strong>数据更新频率:</strong> 每日交易结束后</small></p>
+                                <p class="mb-0"><small><strong>下次更新:</strong> 今日 18:00 EST</small></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 页脚 -->
+            <div class="footer">
+                <p>© 2016-2025 Nathmath | MML Core Development Team | DOF Think Tank | 本仪表板数据仅供内部参考，不构成投资建议 | 最后更新: <span id="footer-update-time"></span></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 脚本 -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script>
+        // 全局变量
+        let lastRefreshTime = new Date();
+        
+        // 页面加载完成后初始化
+        $(document).ready(function() {
+            // 设置最后更新时间
+            updateTimeDisplay();
+            
+            // 加载所有数据
+            loadAllData();
+            
+            // 设置刷新按钮事件
+            $('#refresh-data').click(function() {
+                loadAllData();
+                $(this).html('<i class="fas fa-spinner fa-spin me-2"></i>刷新中...');
+                setTimeout(() => {
+                    $(this).html('<i class="fas fa-sync-alt me-2"></i>刷新数据');
+                }, 1000);
+            });
+            
+            // 每5分钟自动刷新数据
+            setInterval(loadAllData, 5 * 60 * 1000);
+            
+            // 每10秒更新图片缓存（避免缓存）
+            setInterval(() => {
+                const img = $('#monitor-image');
+                const src = img.attr('src');
+                img.attr('src', src.split('?')[0] + '?t=' + new Date().getTime());
+            }, 10 * 1000);
+        });
+        
+        // 更新页面时间显示
+        function updateTimeDisplay() {
+            const now = new Date();
+            const formattedTime = now.toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+            
+            $('#last-update-time').text(formattedTime);
+            $('#footer-update-time').text(formattedTime);
+            
+            // 更新图片时间
+            $('#image-update-time').text(formattedTime);
+            
+            // 更新最后刷新时间
+            lastRefreshTime = now;
+        }
+        
+        // 加载所有数据
+        function loadAllData() {
+            // 加载介绍信息
+            loadInfoJson();
+            
+            // 加载指标表格数据
+            loadFactorsCsv();
+            
+            // 加载Metrics数据
+            loadMetricsCsv();
+            
+            // 更新图片时间戳（避免缓存）
+            updateMonitorImage();
+            
+            // 更新时间显示
+            updateTimeDisplay();
+        }
+        
+        // 加载介绍信息
+        function loadInfoJson() {
+            $.ajax({
+                url: 'info.json',
+                dataType: 'json',
+                success: function(data) {
+                    // 如果info.json存在且有内容
+                    let infoHtml = `
+                        <div class="info-panel">
+                            <div class="info-title">
+                                <i class="fas fa-info-circle me-2"></i>${data.title || '当日市场简评'}
+                            </div>
+                            <p>${data.comment || '今日市场整体表现平稳，三大策略信号显示多头偏好占主导。'}</p>
+                    `;
+                    
+                    if (data.indicators && data.indicators.length > 0) {
+                        infoHtml += '<div class="row">';
+                        data.indicators.forEach(indicator => {
+                            const trendClass = indicator.trend === 'up' ? 'text-success' : 
+                                             indicator.trend === 'down' ? 'text-danger' : 'text-warning';
+                            const trendIcon = indicator.trend === 'up' ? 'fa-arrow-up' : 
+                                            indicator.trend === 'down' ? 'fa-arrow-down' : 'fa-minus';
+                            
+                            infoHtml += `
+                                <div class="col-md-4 mb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span>${indicator.name}:</span>
+                                        <span class="${trendClass}">
+                                            <i class="fas ${trendIcon} me-1"></i>${indicator.value}
+                                        </span>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        infoHtml += '</div>';
+                    }
+                    
+                    infoHtml += '</div>';
+                    
+                    $('#info-section').html(infoHtml);
+                    $('#info-status').removeClass('status-inactive').addClass('status-active').text('已加载');
+                },
+                error: function(xhr, status, error) {
+                    // 如果info.json不存在，不显示任何内容
+                    $('#info-section').html('');
+                    $('#info-status').removeClass('status-active').addClass('status-inactive').text('未找到');
+                }
+            });
+        }
+        
+        // 加载指标表格数据
+        function loadFactorsCsv() {
+            $.ajax({
+                url: 'factors.csv',
+                dataType: 'text',
+                success: function(data) {
+                    const rows = data.split('\n');
+                    if (rows.length === 0) {
+                        showError('factors', 'CSV文件为空');
+                        return;
+                    }
+                    
+                    // 解析表头
+                    const headers = rows[0].split(',').map(h => h.trim());
+                    
+                    // 生成表头
+                    let headerHtml = '';
+                    headers.forEach(header => {
+                        headerHtml += `<th>${header}</th>`;
+                    });
+                    $('#factors-header').html(headerHtml);
+                    
+                    // 生成表格内容
+                    let tableHtml = '';
+                    
+                    // 从第二行开始处理数据
+                    for (let i = 1; i < rows.length; i++) {
+                        if (rows[i].trim() === '') continue;
+                        
+                        const cells = rows[i].split(',');
+                        let rowHtml = '<tr>';
+                        
+                        // 第一列是日期
+                        if (cells.length > 0) {
+                            rowHtml += `<td>${cells[0].trim()}</td>`;
+                        }
+                        
+                        // 后续列是指标值，四舍五入取整
+                        for (let j = 1; j < cells.length && j < headers.length; j++) {
+                            const cellValue = cells[j].trim();
+                            let numericValue;
+                            
+                            try {
+                                numericValue = Math.round(parseFloat(cellValue));
+                            } catch (e) {
+                                numericValue = 0;
+                            }
+                            
+                            // 确保值是0或1
+                            const displayValue = numericValue > 0 ? 1 : 0;
+                            
+                            rowHtml += `
+                                <td>
+                                    <span class="indicator-value indicator-${displayValue}">${displayValue}</span>
+                                </td>
+                            `;
+                        }
+                        
+                        rowHtml += '</tr>';
+                        tableHtml += rowHtml;
+                    }
+                    
+                    $('#factors-data').html(tableHtml);
+                    
+                    // 初始化DataTable
+                    if ($.fn.DataTable.isDataTable('#factors-table')) {
+                        $('#factors-table').DataTable().destroy();
+                    }
+                    
+                    $('#factors-table').DataTable({
+                        order: [[0, 'desc']], // 默认按日期降序排序
+                        pageLength: 10,
+                        language: {
+                            url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/zh-CN.json'
+                        }
+                    });
+                    
+                    // 隐藏错误信息
+                    $('#factors-error').hide();
+                    $('#factors-status').removeClass('status-inactive').addClass('status-active').text('已加载');
+                },
+                error: function(xhr, status, error) {
+                    showError('factors', `加载factors.csv失败: ${error}`);
+                }
+            });
+        }
+        
+        // 加载Metrics数据
+        function loadMetricsCsv() {
+            $.ajax({
+                url: 'metrics.csv',
+                dataType: 'text',
+                success: function(data) {
+                    const rows = data.split('\n');
+                    if (rows.length === 0) {
+                        showError('metrics', 'CSV文件为空');
+                        return;
+                    }
+                    
+                    // 解析表头
+                    const headers = rows[0].split(',').map(h => h.trim());
+                    
+                    // 生成表头
+                    let headerHtml = '';
+                    headers.forEach(header => {
+                        headerHtml += `<th>${header}</th>`;
+                    });
+                    $('#metrics-header').html(headerHtml);
+                    
+                    // 生成表格内容
+                    let tableHtml = '';
+                    
+                    // 从第二行开始处理数据
+                    for (let i = 1; i < rows.length; i++) {
+                        if (rows[i].trim() === '') continue;
+                        
+                        const cells = rows[i].split(',');
+                        let rowHtml = '<tr>';
+                        
+                        for (let j = 0; j < cells.length && j < headers.length; j++) {
+                            const cellValue = cells[j].trim();
+                            
+                            // 如果是数值，尝试格式化
+                            let displayValue = cellValue;
+                            try {
+                                const numValue = parseFloat(cellValue);
+                                if (!isNaN(numValue)) {
+                                    // 如果是百分比（列名包含"率"或"撤"或"收益"）
+                                    if (headers[j].includes('率') || headers[j].includes('撤') || headers[j].includes('收益')) {
+                                        displayValue = (numValue * 100).toFixed(2) + '%';
+                                    } else {
+                                        displayValue = numValue.toFixed(2);
+                                    }
+                                }
+                            } catch (e) {
+                                // 保持原值
+                            }
+                            
+                            rowHtml += `<td>${displayValue}</td>`;
+                        }
+                        
+                        rowHtml += '</tr>';
+                        tableHtml += rowHtml;
+                    }
+                    
+                    $('#metrics-data').html(tableHtml);
+                    
+                    // 隐藏错误信息
+                    $('#metrics-error').hide();
+                    $('#metrics-status').removeClass('status-inactive').addClass('status-active').text('已加载');
+                    
+                    // 更新策略状态
+                    updateStrategyStatus();
+                },
+                error: function(xhr, status, error) {
+                    showError('metrics', `加载metrics.csv失败: ${error}`);
+                }
+            });
+        }
+        
+        // 更新监控图片
+        function updateMonitorImage() {
+            const img = $('#monitor-image');
+            const timestamp = new Date().getTime();
+            img.attr('src', 'monitor.png?t=' + timestamp);
+            
+            // 检查图片是否成功加载
+            img.on('error', function() {
+                $('#image-status').removeClass('status-active').addClass('status-inactive').text('加载失败');
+                // 不显示占位图，保持空白
+            });
+            
+            img.on('load', function() {
+                $('#image-status').removeClass('status-inactive').addClass('status-active').text('已加载');
+            });
+        }
+        
+        // 更新策略状态
+        function updateStrategyStatus() {
+            // 从factors表格中获取最新数据来判断策略状态
+            const rows = $('#factors-data tr');
+            if (rows.length === 0) {
+                $('#strategy-status').html('<div class="error-message"><i class="fas fa-exclamation-circle"></i>无法获取策略状态，数据可能为空</div>');
+                return;
+            }
+            
+            // 获取最新一行数据
+            const lastRow = $(rows[0]);
+            const cells = lastRow.find('td');
+            
+            // 确保我们有足够的列
+            if (cells.length >= 4) { // 日期列 + 3个指标列
+                const s1Value = parseInt($(cells[1]).find('.indicator-value').text());
+                const s2Value = parseInt($(cells[2]).find('.indicator-value').text());
+                const s3Value = parseInt($(cells[3]).find('.indicator-value').text());
+                
+                const statusHtml = `
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>策略1 (pred1 > 0):</span>
+                        <span class="status-badge ${s1Value === 1 ? 'status-active' : 'status-inactive'}">${s1Value === 1 ? '多头偏好' : '中性'}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>策略2 (pred2 > 0):</span>
+                        <span class="status-badge ${s2Value === 1 ? 'status-active' : 'status-inactive'}">${s2Value === 1 ? '多头偏好' : '中性'}</span>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <span>策略3 (pred3 > 0):</span>
+                        <span class="status-badge ${s3Value === 1 ? 'status-active' : 'status-inactive'}">${s3Value === 1 ? '多头偏好' : '中性'}</span>
+                    </div>
+                `;
+                
+                $('#strategy-status').html(statusHtml);
+            } else {
+                $('#strategy-status').html('<div class="error-message"><i class="fas fa-exclamation-circle"></i>数据列数不足，无法确定策略状态</div>');
+            }
+        }
+        
+        // 显示错误信息
+        function showError(type, message) {
+            const errorDiv = $(`#${type}-error`);
+            const errorMsg = $(`#${type}-error-msg`);
+            const statusBadge = $(`#${type}-status`);
+            
+            errorMsg.text(message);
+            errorDiv.show();
+            statusBadge.removeClass('status-active').addClass('status-inactive').text('加载失败');
+            
+            // 清空对应的表格
+            if (type === 'factors') {
+                $('#factors-header').html('');
+                $('#factors-data').html('');
+            } else if (type === 'metrics') {
+                $('#metrics-header').html('');
+                $('#metrics-data').html('');
+            }
+        }
+    </script>
+</body>
+</html>
