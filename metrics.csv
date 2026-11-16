@@ -1,5 +1,5 @@
 Strategy,Total Return,CAGR,Ann. Return,Ann. Volatility,Ann. Downside Volatility,Sharpe,Max Drawdown,Win Rate
-Strategy 1,2.5183,0.6507,1.0033,0.4524,0.324,2.218,0.2881,0.561
+Strategy 1,2.5183,0.6507,1.0034,0.4524,0.324,2.218,0.2881,0.561
 Strategy 2,2.3533,0.6194,0.9376,0.4399,0.3155,2.1311,0.2621,0.5595
 Strategy 3,3.9892,0.8972,1.5894,0.4397,0.3144,3.615,0.2606,0.5724
 Strategy 4,4.4275,0.9619,1.764,0.4413,0.3142,3.9971,0.2397,0.5727
